@@ -1,0 +1,78 @@
+---
+- name: 도커 이미지 배포 및 로드
+  hosts: furiosa_workers
+  become: yes
+  vars:
+    image_src: /home/{{ lookup('env','USER') }}/images/furiosa_validation_tool-offline_2026_1_0_v2_logging.tar.gz
+    image_dest: /tmp/furiosa_validation_tool-offline_2026_1_0_v2_logging.tar.gz
+
+  tasks:
+
+    - name: 도커 설치 여부 확인
+      command: docker --version
+      register: docker_check
+      ignore_errors: yes
+
+    - name: 도커 의존 패키지 설치
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: yes
+      when: docker_check.rc != 0
+
+    - name: Docker GPG 키 등록
+      shell: >
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+        gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg
+      args:
+        creates: /etc/apt/trusted.gpg.d/docker.gpg
+      when: docker_check.rc != 0
+
+    - name: Docker APT 저장소 등록
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture)]
+        https://download.docker.com/linux/ubuntu
+        $(. /etc/os-release && echo $VERSION_CODENAME) stable" |
+        tee /etc/apt/sources.list.d/docker.list
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+      when: docker_check.rc != 0
+
+    - name: Docker 설치
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+      when: docker_check.rc != 0
+
+    - name: Docker 서비스 시작 및 자동시작 등록
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: docker 그룹에 유저 추가
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: 도커 이미지 로드
+      command: docker load -i {{ image_dest }}
+      register: load_result
+
+    - name: 로드 결과 출력
+      debug:
+        msg: "{{ load_result.stdout_lines }}"
+
+    - name: 전송된 tar.gz 파일 삭제
+      file:
+        path: "{{ image_dest }}"
+        state: absent
+

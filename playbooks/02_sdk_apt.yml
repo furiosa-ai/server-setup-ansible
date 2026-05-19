@@ -1,0 +1,44 @@
+---
+- name: Furiosa SDK APT 패키지 설치
+  hosts: furiosa_workers
+  become: yes
+  tasks:
+    - name: furiosa-driver-rngd 설치
+      apt:
+        name: furiosa-driver-rngd=2026.2.0
+        state: present
+
+    - name: furiosa-smi 설치
+      apt:
+        name: furiosa-smi=2026.1.0-4
+        state: present
+
+    - name: furiosa-toolkit-rngd 설치
+      apt:
+        name: furiosa-toolkit-rngd=2026.2.0-4
+        state: present
+
+    - name: furiosa-firmware-image-rngd 설치 (firmware update)
+      shell: >
+        apt-get install -y furiosa-firmware-image-rngd=2026.1.0
+        > /var/log/furiosa_firmware_update.log 2>&1
+      async: 1800
+      poll: 30
+      register: firmware_result
+
+    - name: firmware 업데이트 결과 출력
+      debug:
+        msg: "{{ firmware_result.stdout_lines | default(['로그는 /var/log/furiosa_firmware_update.log 확인']) }}"
+
+    - name: firmware 로그 컨트롤 노드로 가져오기
+      fetch:
+        src: /var/log/furiosa_firmware_update.log
+        dest: ~/logs/firmware_{{ inventory_hostname }}_{{ ansible_date_time.date }}.log
+        flat: yes
+
+    - name: 서버 종료 (firmware 업데이트 완료)
+      command: poweroff
+      async: 1
+      poll: 0
+      ignore_errors: yes
+

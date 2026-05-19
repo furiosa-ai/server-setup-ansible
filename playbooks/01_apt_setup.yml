@@ -1,0 +1,34 @@
+---
+- name: Furiosa APT 저장소 설정
+  hosts: furiosa_workers
+  become: yes
+  tasks:
+
+    - name: curl, gnupg 설치
+      apt:
+        name:
+          - curl
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Google Cloud APT 키 등록
+      shell: >
+        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
+        gpg --dearmor -o /etc/apt/trusted.gpg.d/cloud.google.gpg
+      args:
+        creates: /etc/apt/trusted.gpg.d/cloud.google.gpg
+
+    - name: Furiosa APT 저장소 등록
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture)]
+        http://asia-northeast3-apt.pkg.dev/projects/furiosa-ai
+        $(. /etc/os-release && echo $VERSION_CODENAME) main" |
+        tee /etc/apt/sources.list.d/furiosa.list
+      args:
+        creates: /etc/apt/sources.list.d/furiosa.list
+
+    - name: APT 업데이트
+      apt:
+        update_cache: yes
+
