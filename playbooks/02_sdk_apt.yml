@@ -5,22 +5,22 @@
   tasks:
     - name: furiosa-driver-rngd 설치
       apt:
-        name: furiosa-driver-rngd=2026.2.0
+        name: furiosa-driver-rngd
         state: present
 
     - name: furiosa-smi 설치
       apt:
-        name: furiosa-smi=2026.1.0-4
+        name: furiosa-smi
         state: present
 
     - name: furiosa-toolkit-rngd 설치
       apt:
-        name: furiosa-toolkit-rngd=2026.2.0-4
+        name: furiosa-toolkit-rngd
         state: present
 
     - name: furiosa-firmware-image-rngd 설치 (firmware update)
       shell: >
-        apt-get install -y furiosa-firmware-image-rngd=2026.1.0
+        apt-get install -y furiosa-firmware-image-rngd
         > /var/log/furiosa_firmware_update.log 2>&1
       async: 1800
       poll: 30
