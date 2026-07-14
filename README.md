@@ -38,10 +38,17 @@ Ansible 기반 멀티노드 Furiosa SDK 자동 배포 자동화 플레이북 모
 
 ### 1. 컨트롤 노드에 Ansible 설치
 
+#### Ubuntu
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-pip python3-dev
 sudo pip3 install ansible
+ansible --version
+```
+
+#### macOS
+```bash
+brew install ansible
 ansible --version
 ```
 
