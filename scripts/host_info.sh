@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# 0. 의존성 체크 및 루트 권한 확인
-if ! command -v bc &> /dev/null; then echo "Error: 'bc' package is required."; exit 1; fi
+# 0. (시스템 기본 명령만 사용 — 별도 의존성 없음)
 
 # 1. 정보 추출 (기존 로직)
 HOSTNAME=$(hostname)
@@ -47,15 +46,13 @@ get_npu_info() {
 }
 
 get_ssd_info() {
-    lsblk -dno NAME,MODEL,SIZE,TRAN | while read -r line; do
-        local name=$(echo $line | awk '{print $1}')
-        local size=$(echo $line | awk '{print $3}')
-        local tran=$(echo $line | awk '{print $4}')
-        local model=$(echo $line | awk '{$1=""; $3=""; $4=""; print $0}' | xargs)
-        echo "    - name: \"$name\""
-        echo "      model: \"${model:-Unknown}\""
-        echo "      size: \"$size\""
-        echo "      interface: \"${tran:-sata}\""
+    # lsblk -P(key="value") 형식으로 파싱 → 모델명에 공백이 있어도 컬럼이 안 밀림
+    lsblk -dP -o NAME,MODEL,SIZE,TRAN | while read -r line; do
+        eval "$line"   # NAME, MODEL, SIZE, TRAN 변수 설정
+        echo "    - name: \"$NAME\""
+        echo "      model: \"${MODEL:-Unknown}\""
+        echo "      size: \"$SIZE\""
+        echo "      interface: \"${TRAN:-sata}\""
     done
 }
 
