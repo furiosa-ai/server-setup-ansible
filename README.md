@@ -91,12 +91,6 @@ ansible-playbook playbooks/02_sdk_apt.yml --ask-become-pass
 
 # Step 3: furiosa-llm PIP 패키지 설치
 ansible-playbook playbooks/03_pip_install.yml --ask-become-pass
-
-# Step 4: Docker 설치 및 이미지 배포
-ansible-playbook playbooks/04_docker_deploy.yml --ask-become-pass
-
-# Step 5: 워커 노드 시스템 정보 수집
-ansible-playbook playbooks/05_host_info.yml --ask-become-pass
 ```
 
 ### 특정 노드만 실행
@@ -137,19 +131,6 @@ Ubuntu 버전에 따라 자동 분기됩니다.
 
 공통 설치 패키지: `furiosa-llm`, `urllib3<2`, `more-itertools<11.0`  
 공통 제거 패키지: `torchvision`
-
-### 04_docker_deploy.yml — Docker 이미지 배포
-- Docker 미설치 시 자동 설치 (GPG 키, APT 저장소, `docker-ce` 등)
-- 컨트롤 노드의 `images/` 디렉토리에서 이미지 파일을 워커 노드 `/tmp/` 로 전송
-- `docker load` 후 전송 파일 자동 삭제
-- 배포 이미지: `furiosa_validation_tool-offline_2026_1_0_v2_logging.tar.gz`
-
-### 05_host_info.yml — 워커 노드 시스템 정보 수집
-- `bc` 패키지 미설치 시 자동 설치
-- `scripts/host_info.sh`를 워커 노드로 전송 후 실행
-- 수집 항목: OS, 시리얼 번호, BIOS/BMC 버전, CPU/메모리, NPU PCIe 링크 및 전력, 스토리지
-- 생성된 로그 파일(`<시리얼번호>_<타임스탬프>.log`)을 컨트롤 노드 `~/logs/`로 수집
-- 실행 후 워커 노드의 임시 파일 자동 정리
 
 ---
 
