@@ -25,9 +25,7 @@ Ansible 기반 멀티노드 Furiosa SDK 자동 배포 자동화 플레이북 모
 ├── playbooks/
 │   ├── 01_apt_setup.yml             # Furiosa APT 저장소 설정
 │   ├── 02_sdk_apt.yml               # Furiosa SDK APT 패키지 설치 + firmware 업데이트
-│   ├── 03_pip_install.yml           # furiosa-llm PIP 패키지 설치 (Ubuntu 22.04/24.04 자동 분기)
-│   ├── 04_docker_deploy.yml         # Docker 설치 및 이미지 배포
-│   └── 05_host_info.yml             # 워커 노드 시스템 정보 수집
+│   └── 03_pip_install.yml           # furiosa-llm PIP 패키지 설치 (Ubuntu 22.04/24.04 자동 분기)
 └── scripts/
     └── host_info.sh                 # 워커 노드 정보 수집 스크립트
 ```
