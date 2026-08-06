@@ -3,64 +3,36 @@
   hosts: furiosa_workers
   become: yes
   tasks:
-
-    # ── Ubuntu 22.04 ──────────────────────────────────
-    - name: python3-pip 설치 (22.04)
-      apt:
-        name: python3-pip
-        state: present
-      when: ansible_facts['distribution_version'] == '22.04'
-
-    - name: furiosa-llm 설치 (22.04)
-      pip:
-        name:
-          - furiosa-llm
-          - urllib3<2
-          - more-itertools<11.0
-        extra_args: '--user'
-      when: ansible_facts['distribution_version'] == '22.04'
-
-    - name: torchvision 제거 (22.04)
-      pip:
-        name: torchvision
-        state: absent
-      when: ansible_facts['distribution_version'] == '22.04'
-
-    - name: PATH 설정 (22.04)
-      lineinfile:
-        path: ~/.bashrc
-        line: 'export PATH="$HOME/.local/bin:$PATH"'
-        state: present
-      when: ansible_facts['distribution_version'] == '22.04'
-
-    # ── Ubuntu 24.04 ──────────────────────────────────
-    - name: python3.12-venv 설치 (24.04)
+    - name: python3.12-venv 설치
       apt:
         name: python3.12-venv
         state: present
-      when: ansible_facts['distribution_version'] == '24.04'
 
-    - name: venv 생성 (24.04)
+    - name: venv 생성
       command: python3 -m venv /home/{{ ansible_user }}/venv
       args:
         creates: /home/{{ ansible_user }}/venv
-      when: ansible_facts['distribution_version'] == '24.04'
 
-    - name: pip 업그레이드 후 패키지 설치 (24.04)
+    - name: pip, setuptools, wheel, uv 설치
       pip:
         name:
           - pip
-          - furiosa-llm
-          - urllib3<2
-          - more-itertools<11.0
+          - setuptools
+          - wheel
+          - uv
         virtualenv: /home/{{ ansible_user }}/venv
         state: latest
-      when: ansible_facts['distribution_version'] == '24.04'
 
-    - name: torchvision 제거 (24.04)
-      pip:
-        name: torchvision
-        state: absent
-        virtualenv: /home/{{ ansible_user }}/venv
-      when: ansible_facts['distribution_version'] == '24.04'
+    - name: furiosa-llm 설치
+      command: >
+        /home/{{ ansible_user }}/venv/bin/uv pip install
+        --python /home/{{ ansible_user }}/venv/bin/python
+        --torch-backend=auto
+        furiosa-llm==2026.3.0
 
+    - name: venv 소유권 변경
+      file:
+        path: /home/{{ ansible_user }}/venv
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
