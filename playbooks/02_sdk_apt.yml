@@ -3,42 +3,58 @@
   hosts: furiosa_workers
   become: yes
   tasks:
+    - name: APT 캐시 갱신
+      apt:
+        update_cache: yes
+
     - name: furiosa-driver-rngd 설치
       apt:
-        name: furiosa-driver-rngd
+        name: furiosa-driver-rngd=2026.3.0
+        state: present
+
+    - name: furiosa-firmware-image-rngd 설치
+      apt:
+        name: furiosa-firmware-image-rngd=2026.3.0
+        state: present
+
+    - name: furiosa-firmware-tools-rngd 설치
+      apt:
+        name: furiosa-firmware-tools-rngd=2026.3.0-4
         state: present
 
     - name: furiosa-smi 설치
       apt:
-        name: furiosa-smi
+        name: furiosa-smi=2026.1.1-4
         state: present
 
-    - name: furiosa-toolkit-rngd 설치
-      apt:
-        name: furiosa-toolkit-rngd
-        state: present
+    - name: firmware 업데이트
+      block:
+        - name: firmware 업데이트 실행
+          shell: >
+            set -o pipefail &&
+            furiosa_rngd_updater_all
+            -f /usr/lib/firmware/furiosa-rngd/rngd_fw_v2026.3.0.bin
+            2>&1 | tee /var/log/furiosa_firmware_update.log
+          args:
+            executable: /bin/bash
+          async: 1800
+          poll: 30
+          register: firmware_result
+      always:
+        - name: firmware 업데이트 결과 출력
+          debug:
+            msg: >-
+              {{ firmware_result.stdout_lines
+                 | default(['로그는 /var/log/furiosa_firmware_update.log 확인'], true) }}
 
-    - name: furiosa-firmware-image-rngd 설치 (firmware update)
-      shell: >
-        apt-get install -y furiosa-firmware-image-rngd
-        > /var/log/furiosa_firmware_update.log 2>&1
-      async: 1800
-      poll: 30
-      register: firmware_result
+        - name: firmware 로그 컨트롤 노드로 가져오기
+          fetch:
+            src: /var/log/furiosa_firmware_update.log
+            dest: ~/logs/firmware_{{ inventory_hostname }}_{{ ansible_facts['date_time']['date'] }}.log
+            flat: yes
 
-    - name: firmware 업데이트 결과 출력
-      debug:
-        msg: "{{ firmware_result.stdout_lines | default(['로그는 /var/log/furiosa_firmware_update.log 확인']) }}"
-
-    - name: firmware 로그 컨트롤 노드로 가져오기
-      fetch:
-        src: /var/log/furiosa_firmware_update.log
-        dest: ~/logs/firmware_{{ inventory_hostname }}_{{ ansible_date_time.date }}.log
-        flat: yes
-
-    - name: 서버 종료 (firmware 업데이트 완료)
+    - name: 서버 종료
       command: poweroff
       async: 1
       poll: 0
       ignore_errors: yes
-
